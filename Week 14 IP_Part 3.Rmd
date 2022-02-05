@@ -1,0 +1,119 @@
+---
+title: "Week 14 IP Part_2"
+author: "Ayub Bett"
+date: "2/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#library(data.table)
+library(arules)
+```
+
+```{r}
+#loading the dataset
+carr_3 <- read.transactions("http://bit.ly/SupermarketDatasetII", sep = ",")
+
+#previewing the top 6 entries
+head(carr_3)
+```
+
+```{r}
+#Verifying the objects class
+class(carr_3)
+```
+Our dataset has been correctly loaded as transaction so we can proceed.
+
+```{r}
+#Previewing the first7 items that make up our dataset
+items<-as.data.frame(itemLabels(carr_3))
+colnames(items) <- "Item"
+head(items, 7) 
+```
+The results above show 7 of the items bought in our dataset. They include almonds, antioxydant juice, asparagus, avocado, babies food, bacon, barbecue sauce.
+
+```{r}
+# Previewing our first 3 transactions
+#
+inspect(carr_3[1:3])
+```
+```{r}
+#Generating a summary of the dataset
+summary(carr_3)
+```
+The summary above give us summary of the dataset showing some of the popular items bought with mineral water leading  the list.
+```{r}
+# Exploring the frequency of some articles 
+# 
+itemFrequency(carr_3[, 8:10],type = "absolute")
+round(itemFrequency(carr_3[, 8:10],type = "relative")*100,2)
+
+```
+
+```{r}
+# Displaying top 10 most common items in the carrefour dataset and the items whose relative importance #is at least 10
+
+par(mfrow = c(1, 2))
+
+# plot the frequency of items
+itemFrequencyPlot(carr_3, topN = 10,col="blue")
+itemFrequencyPlot(carr_3, support = 0.1,col="hotpink")
+```
+```{r}
+#Setting our rules with parameters set at a support of 0,001 and confidence of 0.8
+rules <- apriori (carr_3, parameter = list(supp = 0.001, conf = 0.8))
+rules
+
+```
+Setting our support at 0.001 and confidence at 0.8 we have 74 rules that can be created from the dataset.  
+
+```{r}
+#Inspecting some of the top 5 rules we get the following rules
+summary(rules)
+inspect(rules[1:5])
+
+```
+The following can be derived from the rules above:
+1) A person who buys frozen smoothie and spinach has cofidence of 88.89% chance of buying mineral water.
+2) Similarly a person who buys bacon and pancakes has a 81.25% chance of buying Spaghetti.
+
+```{r}
+#Checking the rules with respect to their confidence in a decreasing manner
+rules<-sort(rules, by="confidence", decreasing=TRUE)
+inspect(rules[1:5])
+
+```
+By looking at the rules with respect to their confidence levels we note that there are some perfect associations with 100 percent likelihood of someone buying the corresponding items such as:
+1) A person who buys french fries, mushroomcreamsauce and pasta will eventually buy escalope
+2) A customer buying ground beef, light cream and olive oil will eventually buy mineral water.
+3) A person buying cake, meatballs and mineral water eventually buys milk 
+4) A person who buys cake, olive oil and shrimp will likely buy mineral water.
+
+
+From our previous revelations about most frequently bought items we can make a promotion of other items oftenly associated with mineral water and eggs.
+```{r}
+min_water <- subset(rules, subset = rhs %pin% "mineral water")
+ 
+# Then order by confidence
+min_water<-sort(min_water, by="confidence", decreasing=TRUE)
+inspect(min_water[1:5])
+
+```
+The items that can be put closer to mineral water with  a confidence of above 90 percent include ground beef, light cream, olive oil, cake, shrimp, red wine, soup, pancakes, whole wheat rice,frozen vegetables, milk, spaghetti and turkey.
+
+```{r}
+
+#Checking the association of our second most popular item egg
+egg <- subset(rules, subset = rhs %pin% "eggs")
+ 
+# Then order by confidence
+egg<-sort(egg, by="confidence", decreasing=TRUE)
+inspect(egg[1:2])
+
+
+```
+From the results We note that the most common items that can be put close to eggs are black tea, spaghetti, turkey, mineral water, pasta and shrimp.
