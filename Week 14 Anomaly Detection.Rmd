@@ -1,0 +1,96 @@
+---
+title: "Week_14_IP Part_4"
+author: "Ayub Bett"
+date: "2/6/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(data.table)
+library(tidyverse)
+library(tibbletime)
+library(anomalize)
+library(timetk)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+#Loading the dataset 
+carr_4 <- read.csv("http://bit.ly/CarreFourSalesDataset")
+
+#Previewing the top 6 columns
+head(carr_4)
+
+
+```
+```{r}
+#Checking the summary of the dataset
+summary(carr_4)
+
+#The dataset has 2 columns and 1000 rows
+
+```
+```{r}
+#Checking if there are null values in the dataset
+colSums(is.na(carr_4))
+
+```
+There are no null entries in the dataset
+
+```{r}
+#Checking the datatypes of the columns
+str(carr_4)
+
+```
+We note that date column has a datatype of character so we convert to datetime
+
+```{r}
+#Converting column into datetime
+carr_4$Date <- as.Date(carr_4$Date, format = "%m/%d/%Y")
+
+#Ordering the dates in descending order
+carr_4$Date <- sort(carr_4$Date, decreasing = FALSE)
+#Checking if the changes have been made
+str(carr_4)
+```
+```{r}
+carr_4$Date <- as.POSIXct(carr_4$Date)
+```
+
+```{r}
+# Converting into tible time
+carr_4 <- as_tibble(carr_4)
+
+
+```
+
+```{r}
+#Applying the decompose and recompose function we have
+df_anomalized <- carr_4 %>%
+    time_decompose(Sales, merge = TRUE) %>%
+    anomalize(remainder) %>%
+    time_recompose()
+df_anomalized %>% glimpse()
+
+```
+```{r}
+#Plotting to see if there anomalies
+df_anomalized %>% plot_anomalies(ncol = 3, alpha_dots = 0.75)
+```
+
+From the plot we note that there are anomalies in the dataset, we go further and see if we can find the exact dates the anomalies occurred. We can now find those times when the anomalies ocurred
+```{r}
+carr_4 %>% 
+  time_decompose(Sales) %>%
+  anomalize(remainder) %>%
+  time_recompose() %>%
+  filter(anomaly == 'Yes')
+
+```
+
+We can note that there was an anomaly in sales on date 30th March 2019. So the company should investigate where the problem was.
