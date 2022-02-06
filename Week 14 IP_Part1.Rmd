@@ -1,0 +1,167 @@
+---
+title: "Week 14 IP Part_1"
+author: "Ayub Bett"
+date: "2/4/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+#Loading the datatable library
+library(data.table)
+
+```
+
+```{r}
+#Loading the dataset
+carr_1 <- read.csv("http://bit.ly/CarreFourDataset")
+
+#Previewing the top 6 entries
+head(carr_1)
+```
+WE note that we have 16 columns with some categorical variables.
+
+```{r}
+#Checking if there null values
+colSums(is.na(carr_1))
+
+```
+
+
+```{r}
+#Checking the datatypes of the different variables
+str(carr_1)
+```
+
+```{r}
+#getting unique values of some categorical columns
+unique(carr_1$Branch)
+unique(carr_1$Customer.type)
+unique(carr_1$Gender)
+unique(carr_1$Product.line)
+unique(carr_1$Payment)
+```
+###Principal Component Analysis
+```{r}
+#Since we are working with PCA we will use the numerical columns 
+#Choosing the numerical columns
+carr_num <- carr_1[,-c(1:5, 9,10,11,13,16)]
+head(carr_num)
+```
+
+
+###T-sne 
+
+```{r}
+# Loading our tnse library
+# 
+library(Rtsne)
+
+
+```
+
+```{r}
+# Curating the database for analysis 
+# 
+target <-carr_1$Total
+carr_1$Total<-as.factor(carr_1$Total)
+
+# For plotting
+#
+colors = rainbow(length(unique(carr_1$Total)))
+names(colors) = unique(carr_1$Total)
+
+
+```
+
+```{r}
+# Executing the algorithm on curated data
+# 
+tsne <- Rtsne(carr_num, dims = 2, perplexity=30, verbose=TRUE, max_iter = 500)
+
+# Getting the duration of execution
+# 
+exeTimeTsne <- system.time(Rtsne(carr_num, dims = 2, perplexity=30, verbose=TRUE, max_iter = 500))
+
+
+```
+
+```{r}
+# Plotting our graph 
+# 
+plot(tsne$Y, t='n', main="tsne")
+text(tsne$Y, labels=carr_1$Total, col=colors[carr_1$Total])
+
+
+```
+###FEATURE SELECTION
+###Using the filter method
+```{r}
+# Installing and loading our caret package
+# ---
+# 
+suppressWarnings(
+        suppressMessages(if
+                         (!require(caret, quietly=TRUE))
+                install.packages("caret")))
+library(caret)
+```
+
+```{r}
+# Installing and loading the corrplot package for plotting
+# ---
+# 
+suppressWarnings(
+        suppressMessages(if
+                         (!require(corrplot, quietly=TRUE))
+                install.packages("corrplot")))
+library(corrplot)
+
+```
+
+
+```{r}
+# Calculating the correlation matrix
+# ---
+#
+corr_Matrix <- cor(carr_num)
+
+# Find attributes that are highly correlated
+# ---
+corr_Matrix
+
+# Find attributes that are highly correlated
+# ---
+#Setting our cutoff point to be at 0.5 because its the range of moderate correlation
+highly_Corr <- findCorrelation(corr_Matrix, cutoff=0.5)
+
+# Highly correlated attributes
+# ---
+# 
+highly_Corr
+
+names(carr_num[,highly_Corr])
+```
+We note that the columns with high correlations are Tax, cogs and gross income.
+
+
+```{r}
+# Removing Redundant Features 
+# ---
+# 
+#redundant<-carr_1[-highlyCorrelated]
+
+# Performing our graphical comparison
+# ---
+# 
+par(mfrow = c(1, 2))
+corrplot(corr_Matrix, order = "hclust")
+
+
+```
+The correlation heatmap also proves that the three features have a high correlation.
+We note that by dropping the three highly correlated features we remain with lesser and workable features.
